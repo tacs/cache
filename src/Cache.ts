@@ -6,6 +6,7 @@ type StorageValue = {
 }
 
 export class Cache {
+	static readonly DEFAULT_TTL: number = 10
 	private storage: Record<StorageKey, StorageValue> = {}
 
 	constructor() {
@@ -26,11 +27,16 @@ export class Cache {
 	}
 
 	public get(key: StorageKey): StorageValue['value'] {
-		return this.storage[key].value
+		return this.storage[key]?.value
 	}
 
+	/**
+	 * @param key 
+	 * @param value 
+	 * @param ttl in seconds
+	 */
 	public set(key: StorageKey, value: StorageValue['value'], ttl?: number) {
-		ttl = ttl ?? 60
+		ttl = ttl ?? Cache.DEFAULT_TTL
 
 		this.storage[key] = {
 			deleteAt: new Date().setSeconds(new Date().getSeconds() + ttl),
@@ -44,5 +50,9 @@ export class Cache {
 
 	public flushAll() {
 		this.storage = {}
+	}
+
+	public getAll() {
+		return this.storage
 	}
 }
