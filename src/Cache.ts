@@ -59,10 +59,16 @@ export class Cache {
 
 		ttl = ttl ?? Cache.DEFAULT_TTL
 
-		this.storage[key] = {
-			deleteAt: new Date().setSeconds(new Date().getSeconds() + ttl),
-			value,
+		try {
+			this.storage[key] = {
+				deleteAt: new Date().setSeconds(new Date().getSeconds() + ttl),
+				value,
+			}
+		} catch (ex) {
+			const e = ex as Error
+			throw new Error(`No more memory: ${e.message}`)
 		}
+
 		this.numberOfKeys++
 	}
 
