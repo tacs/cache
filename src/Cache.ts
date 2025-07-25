@@ -9,38 +9,64 @@ export class Cache {
 	static readonly DEFAULT_TTL: number = 10
 	static readonly MAX_ALLOWED_KEYS: number = 3
 	static readonly MAX_KEY_LENGTH: number = 10
+	static readonly MAX_VALUE_LENGTH: number = 1000
+	static readonly CLEANUP_INTERVAL: number = 10
 
-	private storage: Record<StorageKey, StorageValue> = {}
-	private intervalChecker: number
+	private storage: Map<StorageKey, StorageValue> = new Map()
+	private flushInterval: number
+	private flushOnGet: boolean
 	private maxAllowedKeys: number
-	private numberOfKeys: number = 0
 	private maxKeyLength: number
+	private maxValueLength: number
 
 	constructor(params?: {
+		/** interval to check for flushable keys */
+		flushInterval?: number
+		/** triggers every time get() is invoked */
+		flushOnGet?: boolean
+		/** maximum number of keys allowed */
 		maxAllowedKeys?: number
+		/** maximum characters allowed for the key */
 		maxKeyLength?: number
+		/** maximum characters allowed for the value */
+		maxValueLength?: number
+		/** what kind of flush algorithm to use */
 	}) {
 		this.maxAllowedKeys = params?.maxAllowedKeys ?? Cache.MAX_ALLOWED_KEYS
 		this.maxKeyLength = params?.maxKeyLength ?? Cache.MAX_KEY_LENGTH
+		this.maxValueLength = params?.maxValueLength ?? Cache.MAX_VALUE_LENGTH
+		this.flushOnGet = !!params?.flushOnGet
 
-		this.intervalChecker = setInterval(() => {
-			for (const key of Object.keys(this.storage)) {
+		this.flushInterval = setInterval(() => {
+			// O(n)
+			this.storage.keys().forEach(key => {
 				if (this.isFlushable(key)) {
 					this.flush(key)
 				}
-			}
-		}, 1000)
+			})
+		}, (params?.flushInterval ?? 10) * 5000)
 	}
 
-	private isFlushable(key: StorageKey): boolean
-	private isFlushable(val: StorageValue): boolean
-	private isFlushable(keyOrVal: StorageKey | StorageValue): boolean {
-		const value = typeof keyOrVal === 'string' ? this.storage[keyOrVal] : keyOrVal
+	private isFlushable(key: StorageKey): boolean {
+		const value = this.storage.get(key)
+		if (!value) {
+			return false
+		}
+
 		return new Date().getTime() >= value.deleteAt
 	}
 
-	public get(key: StorageKey): StorageValue['value'] {
-		return this.storage[key]?.value
+	public get(key: StorageKey): StorageValue['value'] | undefined {
+		if (!this.storage.has(key)) {
+			return undefined
+		}
+
+		if (this.flushOnGet && this.isFlushable(key)) {
+			this.flush(key)
+			return undefined
+		}
+
+		return this.storage.get(key)!.value
 	}
 
 	/**
@@ -48,45 +74,49 @@ export class Cache {
 	 * @param value 
 	 * @param ttl in seconds
 	 */
-	public set(key: StorageKey, value: StorageValue['value'], ttl?: number) {
-		if (typeof value !== 'string' || value.length > this.maxKeyLength) {
-			throw new Error(`Only strings with up to ${this.maxKeyLength} characters are allowed`)
+	public set(key: StorageKey, value: StorageValue['value'], options?: { replace?: boolean, ttl?: number }): void {
+		if (key.length > this.maxKeyLength) {
+			throw new Error(`The key must be a string with a maximum of ${this.maxKeyLength} characters`)
 		}
 
-		if (this.numberOfKeys >= this.maxAllowedKeys) {
+		if (value.length > this.maxValueLength) {
+			throw new Error(`The value must be a string with a maximum of ${this.maxValueLength} characters`)
+		}
+
+		if (this.storage.size >= this.maxAllowedKeys) {
 			throw new Error('No more keys allowed')
 		}
 
-		ttl = ttl ?? Cache.DEFAULT_TTL
+		const force = options && options.replace
+		if (!force && this.storage.has(key)) {
+			throw new Error('This key already exists, if you wish to replace, please set the options.replace=true')
+		}
 
+		const ttl = options?.ttl ?? Cache.DEFAULT_TTL
 		try {
-			this.storage[key] = {
+			this.storage.set(key, {
 				deleteAt: new Date().setSeconds(new Date().getSeconds() + ttl),
 				value,
-			}
+			})
 		} catch (ex) {
 			const e = ex as Error
 			throw new Error(`No more memory: ${e.message}`)
 		}
-
-		this.numberOfKeys++
 	}
 
-	public flush(key: StorageKey) {
-		delete this.storage[key]
-		this.numberOfKeys--
+	public flush(key: StorageKey): void {
+		this.storage.delete(key)
 	}
 
-	public flushAll() {
-		this.storage = {}
-		this.numberOfKeys = 0
+	public flushAll(): void {
+		this.storage.clear()
 	}
 
 	public getAll() {
 		return this.storage
 	}
 
-	public stop() {
-		clearInterval(this.intervalChecker)
+	public stop(): void {
+		clearInterval(this.flushInterval)
 	}
 }
