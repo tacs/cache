@@ -8,9 +8,10 @@ type StorageValue = {
 export class Cache {
 	static readonly DEFAULT_TTL: number = 10
 	private storage: Record<StorageKey, StorageValue> = {}
+	private intervalChecker: number
 
 	constructor() {
-		setInterval(() => {
+		this.intervalChecker = setInterval(() => {
 			for (const key of Object.keys(this.storage)) {
 				if (this.isFlushable(key)) {
 					this.flush(key)
@@ -21,7 +22,7 @@ export class Cache {
 
 	private isFlushable(key: StorageKey): boolean
 	private isFlushable(val: StorageValue): boolean
-	private isFlushable(keyOrVal: StorageKey | StorageValue): boolean{
+	private isFlushable(keyOrVal: StorageKey | StorageValue): boolean {
 		const value = typeof keyOrVal === 'string' ? this.storage[keyOrVal] : keyOrVal
 		return new Date().getTime() >= value.deleteAt
 	}
@@ -45,7 +46,7 @@ export class Cache {
 	}
 
 	public flush(key: StorageKey) {
-		delete this.storage[key];
+		delete this.storage[key]
 	}
 
 	public flushAll() {
@@ -54,5 +55,9 @@ export class Cache {
 
 	public getAll() {
 		return this.storage
+	}
+
+	public stop() {
+		clearInterval(this.intervalChecker)
 	}
 }

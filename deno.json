@@ -1,5 +1,1 @@
-{
-	"tasks": {
-		"run": "deno src/main.ts"
-	}
-}
+{}
