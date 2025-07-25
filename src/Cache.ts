@@ -8,16 +8,20 @@ type StorageValue = {
 export class Cache {
 	static readonly DEFAULT_TTL: number = 10
 	static readonly MAX_ALLOWED_KEYS: number = 3
-	
+	static readonly MAX_KEY_LENGTH: number = 10
+
 	private storage: Record<StorageKey, StorageValue> = {}
 	private intervalChecker: number
 	private maxAllowedKeys: number
 	private numberOfKeys: number = 0
+	private maxKeyLength: number
 
 	constructor(params?: {
 		maxAllowedKeys?: number
+		maxKeyLength?: number
 	}) {
 		this.maxAllowedKeys = params?.maxAllowedKeys ?? Cache.MAX_ALLOWED_KEYS
+		this.maxKeyLength = params?.maxKeyLength ?? Cache.MAX_KEY_LENGTH
 
 		this.intervalChecker = setInterval(() => {
 			for (const key of Object.keys(this.storage)) {
@@ -45,6 +49,10 @@ export class Cache {
 	 * @param ttl in seconds
 	 */
 	public set(key: StorageKey, value: StorageValue['value'], ttl?: number) {
+		if (typeof value !== 'string' || value.length > this.maxKeyLength) {
+			throw new Error(`Only strings with up to ${this.maxKeyLength} characters are allowed`)
+		}
+
 		if (this.numberOfKeys >= this.maxAllowedKeys) {
 			throw new Error('No more keys allowed')
 		}
