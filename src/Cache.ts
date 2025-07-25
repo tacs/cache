@@ -7,10 +7,18 @@ type StorageValue = {
 
 export class Cache {
 	static readonly DEFAULT_TTL: number = 10
+	static readonly MAX_ALLOWED_KEYS: number = 3
+	
 	private storage: Record<StorageKey, StorageValue> = {}
 	private intervalChecker: number
+	private maxAllowedKeys: number
+	private numberOfKeys: number = 0
 
-	constructor() {
+	constructor(params?: {
+		maxAllowedKeys?: number
+	}) {
+		this.maxAllowedKeys = params?.maxAllowedKeys ?? Cache.MAX_ALLOWED_KEYS
+
 		this.intervalChecker = setInterval(() => {
 			for (const key of Object.keys(this.storage)) {
 				if (this.isFlushable(key)) {
@@ -37,20 +45,27 @@ export class Cache {
 	 * @param ttl in seconds
 	 */
 	public set(key: StorageKey, value: StorageValue['value'], ttl?: number) {
+		if (this.numberOfKeys >= this.maxAllowedKeys) {
+			throw new Error('No more keys allowed')
+		}
+
 		ttl = ttl ?? Cache.DEFAULT_TTL
 
 		this.storage[key] = {
 			deleteAt: new Date().setSeconds(new Date().getSeconds() + ttl),
 			value,
 		}
+		this.numberOfKeys++
 	}
 
 	public flush(key: StorageKey) {
 		delete this.storage[key]
+		this.numberOfKeys--
 	}
 
 	public flushAll() {
 		this.storage = {}
+		this.numberOfKeys = 0
 	}
 
 	public getAll() {
