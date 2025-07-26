@@ -1,18 +1,54 @@
-import { assertEquals } from 'jsr:@std/assert'
+import { assertEquals, assertThrows } from 'jsr:@std/assert'
 import { Cache } from "./Cache.ts";
 
-Deno.test('should store and retrieve', () => {
+Deno.test('should work', () => {
 	const cache = new Cache()
-
-	const key1 = 'tacs'
-	const value1 = 'Olá!!'
-	cache.set(key1, value1)
-	assertEquals(value1, cache.get(key1))
-
-	const key2 = 'tacs'
-	const value2 = 'Olá!!'
-	cache.set(key1, value2)
-	assertEquals(value2, cache.get(key2))
-
 	cache.stop()
+})
+
+Deno.test('when setting', async t => {
+	await t.step('should allow different keys', () => {
+		const cache = new Cache()
+
+		const key1 = 'tacs1'
+		const value1 = 'Olá!!'
+		cache.set(key1, value1)
+		assertEquals(value1, cache.get(key1))
+	
+		const key2 = 'tacs2'
+		const value2 = 'Xau!!'
+		cache.set(key2, value2)
+		assertEquals(value2, cache.get(key2))
+
+		cache.stop()
+	})
+
+	await t.step('should not allow same keys', () => {
+		const cache = new Cache()
+
+		const key = 'tacs'
+		const value1 = 'Olá!!'
+		cache.set(key, value1)
+		assertEquals(value1, cache.get(key))
+	
+		const value2 = 'Xau!!'
+		assertThrows(() => cache.set(key, value2))
+
+		cache.stop()
+	})
+
+	await t.step('should replace the value, if the key already exists and options.replace is true', () => {
+		const cache = new Cache()
+
+		const key = 'tacs'
+		const value1 = 'Olá!!'
+		cache.set(key, value1)
+		assertEquals(value1, cache.get(key))
+	
+		const value2 = 'Xau!!'
+		cache.set(key, value2, { replace: true })
+		assertEquals(value2, cache.get(key))
+
+		cache.stop()
+	})
 })

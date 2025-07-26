@@ -6,6 +6,7 @@ type StorageValue = {
 }
 
 export class Cache {
+	/** in seconds */
 	static readonly DEFAULT_TTL: number = 10
 	static readonly MAX_ALLOWED_KEYS: number = 3
 	static readonly MAX_KEY_LENGTH: number = 10
@@ -74,7 +75,15 @@ export class Cache {
 	 * @param value 
 	 * @param ttl in seconds
 	 */
-	public set(key: StorageKey, value: StorageValue['value'], options?: { replace?: boolean, ttl?: number }): void {
+	public set(
+		key: StorageKey,
+		value: StorageValue['value'],
+		options?: {
+			replace?: boolean
+			/** in seconds */
+			ttl?: number
+		}
+	): void {
 		if (key.length > this.maxKeyLength) {
 			throw new Error(`The key must be a string with a maximum of ${this.maxKeyLength} characters`)
 		}
