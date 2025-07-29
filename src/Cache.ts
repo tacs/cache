@@ -133,7 +133,7 @@ export class Cache {
 		this.storage.clear()
 	}
 
-	public getAll() {
+	public getAll(): typeof this.storage {
 		return this.storage
 	}
 

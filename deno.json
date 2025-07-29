@@ -1,5 +1,9 @@
 {
+	"name": "@tacs/cache",
+	"exports": "./src/Cache.ts",
+	"license": "ISC",
 	"tasks": {
 		"bundle": "deno bundle --platform browser --minify src/Cache.ts --output dist/bundle.js"
-	}
+	},
+	"version": "1.0.0"
 }
