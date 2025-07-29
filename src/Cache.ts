@@ -6,12 +6,12 @@ type StorageValue = {
 }
 
 export class Cache {
-	/** in seconds */
-	public static readonly DEFAULT_TTL: number = 10
-	public static readonly MAX_ALLOWED_KEYS: number = 3
+	/** 10 mins - in seconds */
+	public static readonly DEFAULT_TTL: number = 60 * 10
+	public static readonly MAX_ALLOWED_KEYS: number = 100
 	public static readonly MAX_KEY_LENGTH: number = 10
 	public static readonly MAX_VALUE_LENGTH: number = 1000
-	public static readonly CLEANUP_INTERVAL: number = 10
+	public static readonly DEFAULT_CLEANUP_INTERVAL: number = 5
 	public static readonly DEFAULT_PERSIST_KEY: string = '@tacs/cache'
 	private static persistedObject: Storage = localStorage
 
@@ -23,7 +23,7 @@ export class Cache {
 	private maxValueLength: number
 
 	constructor(params?: {
-		/** interval to check for flushable keys */
+		/** interval to check for flushable keys - in seconds */
 		flushInterval?: number
 		/** triggers every time get() is invoked */
 		flushOnGet?: boolean
@@ -47,7 +47,7 @@ export class Cache {
 					this.flush(key)
 				}
 			})
-		}, (params?.flushInterval ?? 10) * 5000)
+		}, (params?.flushInterval ?? Cache.DEFAULT_CLEANUP_INTERVAL) * 1000)
 
 		if (params?.preloadKey) {
 			const preloadKey = typeof params.preloadKey === 'boolean' ? Cache.DEFAULT_PERSIST_KEY : params.preloadKey
