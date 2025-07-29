@@ -7,11 +7,13 @@ type StorageValue = {
 
 export class Cache {
 	/** in seconds */
-	static readonly DEFAULT_TTL: number = 10
-	static readonly MAX_ALLOWED_KEYS: number = 3
-	static readonly MAX_KEY_LENGTH: number = 10
-	static readonly MAX_VALUE_LENGTH: number = 1000
-	static readonly CLEANUP_INTERVAL: number = 10
+	public static readonly DEFAULT_TTL: number = 10
+	public static readonly MAX_ALLOWED_KEYS: number = 3
+	public static readonly MAX_KEY_LENGTH: number = 10
+	public static readonly MAX_VALUE_LENGTH: number = 1000
+	public static readonly CLEANUP_INTERVAL: number = 10
+	public static readonly DEFAULT_PERSIST_KEY: string = '@tacs/cache'
+	private static persistedObject: Storage = localStorage
 
 	private storage: Map<StorageKey, StorageValue> = new Map()
 	private flushInterval: number
@@ -31,7 +33,7 @@ export class Cache {
 		maxKeyLength?: number
 		/** maximum characters allowed for the value */
 		maxValueLength?: number
-		/** what kind of flush algorithm to use */
+		preloadKey?: string | boolean
 	}) {
 		this.maxAllowedKeys = params?.maxAllowedKeys ?? Cache.MAX_ALLOWED_KEYS
 		this.maxKeyLength = params?.maxKeyLength ?? Cache.MAX_KEY_LENGTH
@@ -46,6 +48,16 @@ export class Cache {
 				}
 			})
 		}, (params?.flushInterval ?? 10) * 5000)
+
+		if (params?.preloadKey) {
+			const preloadKey = typeof params.preloadKey === 'boolean' ? Cache.DEFAULT_PERSIST_KEY : params.preloadKey
+			const preloadData = Cache.persistedObject.getItem(preloadKey)
+			if (!preloadData) {
+				throw new Error(`No preload data was found in ${preloadKey}`)
+			}
+
+			this.storage = new Map(JSON.parse(preloadData))
+		}
 	}
 
 	private isFlushable(key: StorageKey): boolean {
@@ -125,7 +137,12 @@ export class Cache {
 		return this.storage
 	}
 
-	public stop(): void {
+	public destroy(): void {
 		clearInterval(this.flushInterval)
+		this.storage = new Map()
+	}
+
+	public persist(key?: string): void {
+		Cache.persistedObject.setItem(key ?? Cache.DEFAULT_PERSIST_KEY, JSON.stringify(this.storage.entries().toArray()))
 	}
 }

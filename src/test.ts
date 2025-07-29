@@ -1,9 +1,9 @@
 import { assertEquals, assertThrows } from 'jsr:@std/assert'
 import { Cache } from "./Cache.ts";
 
-Deno.test('should work', () => {
+Deno.test('should be able to instantiate and destroy', () => {
 	const cache = new Cache()
-	cache.stop()
+	cache.destroy()
 })
 
 Deno.test('when setting', async t => {
@@ -20,7 +20,7 @@ Deno.test('when setting', async t => {
 		cache.set(key2, value2)
 		assertEquals(value2, cache.get(key2))
 
-		cache.stop()
+		cache.destroy()
 	})
 
 	await t.step('should not allow same keys', () => {
@@ -34,7 +34,7 @@ Deno.test('when setting', async t => {
 		const value2 = 'Xau!!'
 		assertThrows(() => cache.set(key, value2))
 
-		cache.stop()
+		cache.destroy()
 	})
 
 	await t.step('should replace the value, if the key already exists and options.replace is true', () => {
@@ -49,6 +49,35 @@ Deno.test('when setting', async t => {
 		cache.set(key, value2, { replace: true })
 		assertEquals(value2, cache.get(key))
 
-		cache.stop()
+		cache.destroy()
 	})
+
+	await t.step('should ', () => {
+		
+	})
+})
+
+Deno.test('when persisting', async t => {
+	const cache = new Cache()
+	const key = 'tacs'
+	const value = 'Olá!!'
+	cache.set(key, value)
+
+	await t.step('should store to the default key', () => {
+		cache.persist()
+
+		const cachePersisted = new Cache({ preloadKey: true })
+		assertEquals(cachePersisted.get(key), cache.get(key))
+		cachePersisted.destroy()
+	})
+
+	await t.step('should store to the requested key', () => {
+		const preloadKey = 'tacsy'
+		cache.persist(preloadKey)
+		const cachePersisted = new Cache({ preloadKey })
+		assertEquals(cachePersisted.get(key), cache.get(key))
+		cachePersisted.destroy()
+	})
+
+	cache.destroy()
 })
