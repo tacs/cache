@@ -1,1 +1,5 @@
-{}
+{
+	"tasks": {
+		"bundle": "deno bundle --platform browser --minify src/Cache.ts --output dist/bundle.js"
+	}
+}
