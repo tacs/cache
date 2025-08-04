@@ -1,0 +1,23 @@
+{
+	"exports": "./mod.ts",
+	"license": "MIT",
+	"name": "@tacs/cache",
+	"tasks": {
+		"buildNode": {
+			"command": "deno run -A scripts/build-node.ts"
+		},
+		"bundle": {
+			"command": "deno bundle --platform browser --minify src/Cache.ts --output dist/cache.js"
+		},
+		"test": {
+			"command": "deno test --fail-fast --clean test/*"
+		},
+		"test:watch": {
+			"command": "deno task test --watch"
+		}
+	},
+	"version": "0.1.0",
+	"imports": {
+		"@deno/dnt": "jsr:@deno/dnt@^0.42.3"
+	}
+}

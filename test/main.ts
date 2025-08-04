@@ -1,5 +1,5 @@
 import { assertEquals, assertThrows } from 'jsr:@std/assert'
-import { Cache } from "./Cache.ts";
+import { Cache } from './../src/Cache.ts'
 
 Deno.test('should be able to instantiate and destroy', () => {
 	const cache = new Cache()
@@ -58,26 +58,31 @@ Deno.test('when setting', async t => {
 })
 
 Deno.test('when persisting', async t => {
-	const cache = new Cache()
-	const key = 'tacs'
-	const value = 'Olá!!'
-	cache.set(key, value)
-
 	await t.step('should store to the default key', () => {
+		const cache = new Cache({ persistKey: true })
+		const key = 'tacs'
+		const value = 'Olá!!'
+		cache.set(key, value)
 		cache.persist()
+		cache.destroy()
 
-		const cachePersisted = new Cache({ preloadKey: true })
-		assertEquals(cachePersisted.get(key), cache.get(key))
-		cachePersisted.destroy()
+		const cachePersisted = new Cache({ persistKey: true })
+		assertEquals(cachePersisted.get(key), value)
+		cachePersisted.destroy(true)
+		
 	})
 
 	await t.step('should store to the requested key', () => {
-		const preloadKey = 'tacsy'
-		cache.persist(preloadKey)
-		const cachePersisted = new Cache({ preloadKey })
-		assertEquals(cachePersisted.get(key), cache.get(key))
-		cachePersisted.destroy()
-	})
+		const persistKey = 'tacsy'
+		const cache = new Cache({ persistKey })
+		const key = 'tacs'
+		const value = 'Olá!!'
+		cache.set(key, value)
+		cache.persist()
+		cache.destroy()
 
-	cache.destroy()
+		const cachePersisted = new Cache({ persistKey: persistKey })
+		assertEquals(cachePersisted.get(key), value)
+		cachePersisted.destroy(true)
+	})
 })

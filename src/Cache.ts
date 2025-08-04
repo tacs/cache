@@ -13,14 +13,15 @@ export class Cache {
 	public static readonly MAX_VALUE_LENGTH: number = 1000
 	public static readonly DEFAULT_CLEANUP_INTERVAL: number = 5
 	public static readonly DEFAULT_PERSIST_KEY: string = '@tacs/cache'
-	private static persistedObject: Storage = localStorage
+	private static persistedObject: Storage = globalThis.localStorage
 
 	private storage: Map<StorageKey, StorageValue> = new Map()
-	private flushInterval: number
+	private flushInterval: ReturnType<typeof setInterval>
 	private flushOnGet: boolean
 	private maxAllowedKeys: number
 	private maxKeyLength: number
 	private maxValueLength: number
+	private persistKey?: string
 
 	constructor(params?: {
 		/** interval to check for flushable keys - in seconds */
@@ -33,7 +34,7 @@ export class Cache {
 		maxKeyLength?: number
 		/** maximum characters allowed for the value */
 		maxValueLength?: number
-		preloadKey?: string | boolean
+		persistKey?: string | boolean
 	}) {
 		this.maxAllowedKeys = params?.maxAllowedKeys ?? Cache.MAX_ALLOWED_KEYS
 		this.maxKeyLength = params?.maxKeyLength ?? Cache.MAX_KEY_LENGTH
@@ -42,21 +43,22 @@ export class Cache {
 
 		this.flushInterval = setInterval(() => {
 			// O(n)
-			this.storage.keys().forEach(key => {
+			for (const key of this.storage.keys()) {
 				if (this.isFlushable(key)) {
 					this.flush(key)
 				}
-			})
+			}
 		}, (params?.flushInterval ?? Cache.DEFAULT_CLEANUP_INTERVAL) * 1000)
 
-		if (params?.preloadKey) {
-			const preloadKey = typeof params.preloadKey === 'boolean' ? Cache.DEFAULT_PERSIST_KEY : params.preloadKey
-			const preloadData = Cache.persistedObject.getItem(preloadKey)
-			if (!preloadData) {
-				throw new Error(`No preload data was found in ${preloadKey}`)
+		if (params?.persistKey) {
+			this.persistKey = typeof params.persistKey === 'string' ? params.persistKey : Cache.DEFAULT_PERSIST_KEY
+			const persistedData = Cache.persistedObject.getItem(this.persistKey)
+			if (!persistedData) {
+				//throw new Error(`No persisted data was found in ${this.persistKey}`)
+				return
 			}
 
-			this.storage = new Map(JSON.parse(preloadData))
+			this.storage = new Map(JSON.parse(persistedData))
 		}
 	}
 
@@ -137,12 +139,28 @@ export class Cache {
 		return this.storage
 	}
 
-	public destroy(): void {
+	public destroy(includePersistedData?: boolean): void {
 		clearInterval(this.flushInterval)
 		this.storage = new Map()
+
+		if (includePersistedData) {
+			this.destroyPersistedData()
+		}
 	}
 
-	public persist(key?: string): void {
-		Cache.persistedObject.setItem(key ?? Cache.DEFAULT_PERSIST_KEY, JSON.stringify(this.storage.entries().toArray()))
+	private checkPersistKey(): void {
+		if (!this.persistKey) throw new Error(`persistKey is undefined, please set one through the constructor`)
+	}
+
+	public persist(): void {
+		this.checkPersistKey()
+
+		Cache.persistedObject.setItem(this.persistKey!, JSON.stringify(Array.from(this.storage.entries())))
+	}
+
+	public destroyPersistedData(): void {
+		this.checkPersistKey()
+
+		Cache.persistedObject.removeItem(this.persistKey!)
 	}
 }

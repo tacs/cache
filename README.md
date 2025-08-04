@@ -1,1 +1,1 @@
-Small challenge to create a cache library
+Small cache library
