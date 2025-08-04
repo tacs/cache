@@ -1,4 +1,4 @@
-name: Deploy
+name: Publish
 on:
   push:
     branches: master
@@ -6,8 +6,8 @@ on:
     branches: master
 
 jobs:
-  deploy:
-    name: Deploy
+  pubish:
+    name: Publish
     runs-on: ubuntu-latest
 
     permissions:
@@ -26,9 +26,5 @@ jobs:
       #- name: Build step
       #  run: 'deno task build'
 
-      - name: Upload to Deno Deploy
-        uses: denoland/deployctl@v1
-        with:
-          project: '@tacs/cache'
-          entrypoint: 'mod.ts'
-          root: '.'
+      - name: Publish
+        run: deno publish
