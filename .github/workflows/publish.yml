@@ -1,30 +1,49 @@
 name: Publish
 on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
   push:
-    branches: master
-  pull_request:
-    branches: master
+    branches:
+      - master
 
 jobs:
   pubish:
-    name: Publish
     runs-on: ubuntu-latest
 
     permissions:
       id-token: write # Needed for auth with Deno Deploy
-      contents: read # Needed to clone the repository
+      contents: write # Needed to clone the repository and commit the version bump
 
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for git commit history
 
       - name: Install Deno
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.4.3
 
-      #- name: Build step
-      #  run: 'deno task build'
+      - name: Bump version in deno.jsonc
+        run: deno task bumpVersion ${{ github.event.inputs.bump }}
+
+      - name: Commit version bump
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add deno.jsonc
+          git commit -m "Bump version to $(deno run -q --allow-read scripts/bump-version.ts deno.jsonc --get-version)"
+          git push
 
       - name: Publish
         run: deno publish

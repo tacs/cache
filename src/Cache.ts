@@ -9,7 +9,7 @@ type StorageValue = {
 }
 
 /**
- * Small Cache library. It also allows to persist the data in a Storage (at the moment, localStorage is used)
+ * Small Cache library. It allows to persist the data in a Storage (at the moment, only localStorage is used)
  * 
  * @example
  * ```ts
@@ -18,6 +18,8 @@ type StorageValue = {
  * cache.get('hello')
  * cache.destroy()
  * ```
+ * 
+ * @module
  */
 export class Cache {
 	/** 10 mins - in seconds */
