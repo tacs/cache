@@ -1,5 +1,5 @@
 {
-	"exports": "./mod.ts",
+	"exports": "./src/Cache.ts",
 	"imports": {
 		"@deno/dnt": "jsr:@deno/dnt@^0.42.3"
 	},
