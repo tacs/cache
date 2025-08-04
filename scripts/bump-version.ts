@@ -1,4 +1,3 @@
-// scripts/bump-version.ts
 import { parse } from '@std/jsonc'
 
 function bumpVersion(version: string, type: 'major' | 'minor' | 'patch'): string {
@@ -8,23 +7,25 @@ function bumpVersion(version: string, type: 'major' | 'minor' | 'patch'): string
 	return `${major}.${minor}.${patch + 1}`
 }
 
-const bumpType = Deno.args[0] || 'patch' // Default to patch
+const bumpType = Deno.args[0]
+if (!bumpType) throw new Error('Invalid bump type')
+
 const configPath = 'deno.jsonc'
 
-// Read and parse deno.jsonc
+// read and parse deno.jsonc
 const configContent = await Deno.readTextFile(configPath)
 const config = parse(configContent) as { version?: string }
 
-// Check if version exists
+// check if version exists
 if (!config.version) {
 	console.error('Error: "version" key not found in deno.jsonc')
 	Deno.exit(1)
 }
 
-// Bump version
+// bump version
 const newVersion = bumpVersion(config.version, bumpType as 'major' | 'minor' | 'patch')
 console.log(`Version bumped to ${newVersion}`)
 const newConfigContent = configContent.replace(`"version": "${config.version}"`, `"version": "${newVersion}"`)
 
-// Write updated config back to file
+// write updated config back to file
 await Deno.writeTextFile(configPath, newConfigContent)

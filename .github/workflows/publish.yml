@@ -11,9 +11,6 @@ on:
           - patch
           - minor
           - major
-  push:
-    branches:
-      - master
 
 jobs:
   pubish:
@@ -42,7 +39,7 @@ jobs:
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           git add deno.jsonc
-          git commit -m "Bump version to $(deno run -q --allow-read scripts/bump-version.ts deno.jsonc --get-version)"
+          git commit -m "$(deno run -q --allow-read scripts/bump-version.ts deno.jsonc)"
           git push
 
       - name: Publish
