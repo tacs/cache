@@ -8,7 +8,17 @@ type StorageValue = {
 	value: string
 }
 
-/** Small Cache library. It also allows to persist the data in a Storage (at the moment, localStorage is used) */
+/**
+ * Small Cache library. It also allows to persist the data in a Storage (at the moment, localStorage is used)
+ * 
+ * @example
+ * ```ts
+ * const Cache = new Cache()
+ * cache.set('hello', 'world')
+ * cache.get('hello')
+ * cache.destroy()
+ * ```
+ */
 export class Cache {
 	/** 10 mins - in seconds */
 	public static readonly DEFAULT_TTL: number = 60 * 10
