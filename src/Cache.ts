@@ -1,10 +1,14 @@
+/** type for the storage key */
 type StorageKey = string
+/** the object stored in the Cache object to properly manage a key */
 type StorageValue = {
 	/** timestamp */
 	deleteAt: number
+	/** the value to store */
 	value: string
 }
 
+/** Small Cache library. It also allows to persist the data in a Storage (at the moment, localStorage is used) */
 export class Cache {
 	/** 10 mins - in seconds */
 	public static readonly DEFAULT_TTL: number = 60 * 10
@@ -34,6 +38,7 @@ export class Cache {
 		maxKeyLength?: number
 		/** maximum characters allowed for the value */
 		maxValueLength?: number
+		/** if not set, it will not persist. If set as true, it will use the DEFAULT_PERSIST_KEY, but if set as string, it will use that as the persist key  */
 		persistKey?: string | boolean
 	}) {
 		this.maxAllowedKeys = params?.maxAllowedKeys ?? Cache.MAX_ALLOWED_KEYS
@@ -71,6 +76,7 @@ export class Cache {
 		return new Date().getTime() >= value.deleteAt
 	}
 
+	/** get the value from a key */
 	public get(key: StorageKey): StorageValue['value'] | undefined {
 		if (!this.storage.has(key)) {
 			return undefined
@@ -85,16 +91,16 @@ export class Cache {
 	}
 
 	/**
+	 * set a value, proving a key and an optional TTL
 	 * @param key 
 	 * @param value 
-	 * @param ttl in seconds
+	 * @param ttl in seconds, by default uses DEFAULT_TTL
 	 */
 	public set(
 		key: StorageKey,
 		value: StorageValue['value'],
 		options?: {
 			replace?: boolean
-			/** in seconds */
 			ttl?: number
 		}
 	): void {
@@ -127,21 +133,25 @@ export class Cache {
 		}
 	}
 
+	/** flushes a key */
 	public flush(key: StorageKey): void {
 		this.storage.delete(key)
 	}
 
+	/** flushes all keys */
 	public flushAll(): void {
 		this.storage.clear()
 	}
 
+	/** gets the storage object used internally to hold data */
 	public getAll(): typeof this.storage {
 		return this.storage
 	}
 
+	/** clears all the cache and optionally can be set to remove the persisted data */
 	public destroy(includePersistedData?: boolean): void {
 		clearInterval(this.flushInterval)
-		this.storage = new Map()
+		this.storage.clear()
 
 		if (includePersistedData) {
 			this.destroyPersistedData()
@@ -152,12 +162,14 @@ export class Cache {
 		if (!this.persistKey) throw new Error(`persistKey is undefined, please set one through the constructor`)
 	}
 
+	/** persists all the cached data using the persistKey set in the constructor */
 	public persist(): void {
 		this.checkPersistKey()
 
 		Cache.persistedObject.setItem(this.persistKey!, JSON.stringify(Array.from(this.storage.entries())))
 	}
 
+	/** remove the persistent data from the Persistent Storage */
 	public destroyPersistedData(): void {
 		this.checkPersistKey()
 
