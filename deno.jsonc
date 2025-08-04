@@ -1,5 +1,8 @@
 {
 	"exports": "./mod.ts",
+	"imports": {
+		"@deno/dnt": "jsr:@deno/dnt@^0.42.3"
+	},
 	"license": "MIT",
 	"name": "@tacs/cache",
 	"tasks": {
@@ -16,8 +19,5 @@
 			"command": "deno task test --watch"
 		}
 	},
-	"version": "0.1.0",
-	"imports": {
-		"@deno/dnt": "jsr:@deno/dnt@^0.42.3"
-	}
+	"version": "0.1.0"
 }
